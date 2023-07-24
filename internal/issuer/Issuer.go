@@ -7,5 +7,5 @@ import (
 type Issuer struct {
 	ID       string
 	FullName string
-	Balance  currency.Amount
+	Balances []currency.Amount
 }
