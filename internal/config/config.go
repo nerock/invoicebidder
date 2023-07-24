@@ -7,14 +7,12 @@ import (
 )
 
 type Config struct {
-	Port int `json:"port"`
+	Port          int `json:"port"`
+	EventHandlers int `json:"event_handlers"`
+	EventBuffer   int `json:"event_buffer"`
 }
 
 func (c Config) Validate() error {
-	if c.Port == 0 {
-		return fmt.Errorf("invalid port")
-	}
-
 	return nil
 }
 
