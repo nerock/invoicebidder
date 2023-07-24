@@ -7,14 +7,15 @@ import (
 type Status string
 
 const (
-	BIDDING Status = "bidding"
-	LOCKED  Status = "locked"
-	TRADED  Status = "traded"
+	OPEN   Status = "open"
+	LOCKED Status = "locked"
+	TRADED Status = "traded"
 )
 
 type Invoice struct {
 	ID       string
 	IssuerID string
 	Price    currency.Amount
+	Bids     []Bid
 	Status   Status
 }

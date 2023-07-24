@@ -1,4 +1,4 @@
-package bid
+package invoice
 
 import "github.com/bojanz/currency"
 
