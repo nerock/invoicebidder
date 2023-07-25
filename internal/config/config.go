@@ -7,9 +7,14 @@ import (
 )
 
 type Config struct {
-	Port          int `json:"port"`
-	EventHandlers int `json:"event_handlers"`
-	EventBuffer   int `json:"event_buffer"`
+	Server struct {
+		Port int `json:"port"`
+	} `json:"server"`
+	Broker struct {
+		Handlers   int `json:"event_handlers"`
+		Buffer     int `json:"event_buffer"`
+		MaxRetries int `json:"max_retries"`
+	} `json:"broker"`
 }
 
 func (c Config) Validate() error {

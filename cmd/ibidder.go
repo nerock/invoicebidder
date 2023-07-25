@@ -2,15 +2,16 @@ package main
 
 import (
 	"context"
-	"github.com/nerock/invoicebidder/internal/config"
-	"github.com/nerock/invoicebidder/internal/orchestrator/api"
-	"github.com/nerock/invoicebidder/internal/orchestrator/broker"
 	"log"
 	"os"
 	"os/signal"
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/nerock/invoicebidder/internal/config"
+	"github.com/nerock/invoicebidder/internal/orchestrator/api"
+	"github.com/nerock/invoicebidder/internal/orchestrator/broker"
 )
 
 type Server interface {
@@ -24,8 +25,8 @@ func main() {
 		log.Fatal(err)
 	}
 
-	brk := broker.New(cfg.EventHandlers, cfg.EventBuffer, nil, nil, nil)
-	srv := api.New(cfg.Port, nil, nil, nil, brk)
+	brk := broker.New(cfg.Broker.Handlers, cfg.Broker.Buffer, cfg.Broker.MaxRetries, nil, nil, nil)
+	srv := api.New(cfg.Server.Port, nil, nil, nil, brk)
 
 	run(srv, brk)
 }

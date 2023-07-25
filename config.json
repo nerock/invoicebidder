@@ -1,6 +1,10 @@
 {
-  "port": 8080,
-  "event_handlers": 100,
-  "event_buffer": 1000,
-  "max_retries": 5
+  "server": {
+    "port": 8080
+  },
+  "broker": {
+    "event_handlers": 100,
+    "event_buffer": 1000,
+    "max_retries": 5
+  }
 }
