@@ -1,17 +1,17 @@
 package api
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"net/http"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/labstack/echo/v4"
 )
 
 var (
 	ErrBadRequest = errors.New("bad request")
-	ErrNotFound   = sql.ErrNoRows
+	ErrNotFound   = pgx.ErrNoRows
 )
 
 type HTTPError struct {
