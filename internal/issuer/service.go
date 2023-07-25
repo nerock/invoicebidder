@@ -12,7 +12,7 @@ import (
 type Storage interface {
 	CreateIssuer(context.Context, Issuer) error
 	RetrieveIssuer(context.Context, string) (Issuer, error)
-	UpdateBalances(context.Context, []currency.Amount) error
+	UpdateBalances(context.Context, string, []currency.Amount) error
 }
 
 func NewService(st Storage) *Service {
@@ -69,5 +69,5 @@ func (s *Service) ApproveTrade(ctx context.Context, id string, amount currency.A
 		issuer.Balances = append(issuer.Balances, amount)
 	}
 
-	return s.st.UpdateBalances(ctx, issuer.Balances)
+	return s.st.UpdateBalances(ctx, id, issuer.Balances)
 }
