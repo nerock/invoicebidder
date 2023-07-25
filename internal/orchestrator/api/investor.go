@@ -2,10 +2,11 @@ package api
 
 import (
 	"fmt"
-	"github.com/bojanz/currency"
-	"github.com/labstack/echo/v4"
 	"net/http"
 	"strings"
+
+	"github.com/bojanz/currency"
+	"github.com/labstack/echo/v4"
 )
 
 type CreateInvestorRequest struct {
@@ -49,14 +50,14 @@ func (s *Server) investorRoutes(g *echo.Group) {
 func (s *Server) CreateInvestor(c echo.Context) error {
 	var req CreateInvestorRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return errBadRequest(err, c)
 	}
 
 	bs := make([]currency.Amount, 0, len(req.Balances))
 	for _, balance := range req.Balances {
 		b, err := currency.NewAmount(balance.Amount, balance.Currency)
 		if err != nil {
-			return c.JSON(http.StatusBadRequest, fmt.Errorf("invalid bid amount: %w", err))
+			return errBadRequest(fmt.Errorf("invalid bid amount: %w", err), c)
 		}
 
 		bs = append(bs, b)
@@ -65,7 +66,7 @@ func (s *Server) CreateInvestor(c echo.Context) error {
 	ctx := c.Request().Context()
 	inv, err := s.investorService.CreateInvestor(ctx, req.FullName, bs)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, fmt.Errorf("could not create investor: %w", err))
+		return errHandler(err, c)
 	}
 
 	return c.JSON(http.StatusCreated, InvestorResponse{
@@ -85,7 +86,7 @@ func (s *Server) ListInvestors(c echo.Context) error {
 	ctx := c.Request().Context()
 	invMap, err := s.investorService.ListInvestors(ctx, ids)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, err)
+		return errHandler(err, c)
 	}
 
 	res := make([]InvestorResponse, 0, len(invMap))

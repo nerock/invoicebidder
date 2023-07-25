@@ -1,10 +1,12 @@
 package api
 
 import (
+	"errors"
 	"fmt"
+	"net/http"
+
 	"github.com/bojanz/currency"
 	"github.com/labstack/echo/v4"
-	"net/http"
 )
 
 type InvoiceResponse struct {
@@ -49,26 +51,31 @@ func (s *Server) invoiceRoutes(g *echo.Group) {
 }
 
 func (s *Server) CreateInvoice(c echo.Context) error {
-	ctx := c.Request().Context()
-	iss, err := s.issuerService.GetIssuer(ctx, c.FormValue("issuer_id"))
-	if err != nil {
-		return c.JSON(http.StatusNotFound, fmt.Errorf("could not retrieve issuer"))
+	issID := c.FormValue("issuer_id")
+	if issID == "" {
+		return errBadRequest(fmt.Errorf("issuer id cannot be empty"), c)
+	}
+	price := c.FormValue("price")
+	if issID == "" {
+		return errBadRequest(fmt.Errorf("price cannot be empty"), c)
+	}
+	curr := c.FormValue("currency")
+	if issID == "" {
+		return errBadRequest(fmt.Errorf("currency cannot be empty"), c)
 	}
 
-	price := c.FormValue("price")
-	curr := c.FormValue("currency")
 	amount, err := currency.NewAmount(price, curr)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Errorf("invalid price: %w", err))
+		return errBadRequest(err, c)
 	}
 
 	formFile, err := c.FormFile("invoice")
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Errorf("could not read invoice file: %w", err))
+		return errBadRequest(fmt.Errorf("could not read invoice file: %w", err), c)
 	}
 	file, err := formFile.Open()
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Errorf("could not open invoice file: %w", err))
+		return errBadRequest(fmt.Errorf("could not open invoice file: %w", err), c)
 	}
 	defer func() {
 		if err := file.Close(); err != nil {
@@ -76,14 +83,20 @@ func (s *Server) CreateInvoice(c echo.Context) error {
 		}
 	}()
 
+	ctx := c.Request().Context()
+	iss, err := s.issuerService.GetIssuer(ctx, issID)
+	if err != nil {
+		return errHandler(err, c)
+	}
+
 	inv, err := s.invoiceService.CreateInvoice(ctx, iss.ID, amount, file)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, fmt.Errorf("could not create invoice: %w", err))
+		return errHandler(err, c)
 	}
 
 	return c.JSON(http.StatusCreated, InvoiceResponse{
 		ID:     inv.ID,
-		Price:  inv.Price.String(),
+		Price:  currFmt.Format(inv.Price),
 		Status: string(inv.Status),
 		Issuer: InvoiceIssuerResponse{
 			ID:       iss.ID,
@@ -95,21 +108,24 @@ func (s *Server) CreateInvoice(c echo.Context) error {
 
 func (s *Server) RetrieveInvoice(c echo.Context) error {
 	id := c.Param("id")
+	if id == "" {
+		return errBadRequest(errors.New("id cannot be empty"), c)
+	}
 
 	ctx := c.Request().Context()
 	inv, err := s.invoiceService.GetInvoice(ctx, id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return errHandler(err, c)
 	}
 
 	iss, err := s.issuerService.GetIssuer(ctx, inv.IssuerID)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return errHandler(err, c)
 	}
 
 	res := InvoiceResponse{
 		ID:     inv.ID,
-		Price:  inv.Price.String(),
+		Price:  currFmt.Format(inv.Price),
 		Status: string(inv.Status),
 		Issuer: InvoiceIssuerResponse{
 			ID:       iss.ID,
@@ -127,18 +143,18 @@ func (s *Server) RetrieveInvoice(c echo.Context) error {
 
 		investors, err := s.investorService.ListInvestors(ctx, investorsIDs)
 		if err != nil {
-			return c.JSON(http.StatusNotFound, err)
+			return errHandler(err, c)
 		}
 
 		for _, b := range inv.Bids {
 			inv, ok := investors[b.InvestorID]
 			if !ok {
-				return c.JSON(http.StatusNotFound, "missing investor info")
+				return fmt.Errorf("missing investor info: %w", ErrNotFound)
 			}
 
 			res.Bids = append(res.Bids, InvoiceBidResponse{
 				ID:     b.ID,
-				Amount: b.Amount.String(),
+				Amount: currFmt.Format(b.Amount),
 				Investor: BidInvestorResponse{
 					ID:       inv.ID,
 					FullName: inv.FullName,
@@ -153,66 +169,42 @@ func (s *Server) RetrieveInvoice(c echo.Context) error {
 func (s *Server) Bid(c echo.Context) error {
 	var req BidRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return errBadRequest(err, c)
 	}
 	bidAmount, err := currency.NewAmount(req.Amount.Amount, req.Amount.Currency)
 	if err != nil {
-		return c.JSON(http.StatusBadRequest, fmt.Errorf("invalid bid amount: %w", err))
+		return errBadRequest(err, c)
 	}
 
 	invoiceID := c.Param("id")
 	if invoiceID == "" {
-		return c.JSON(http.StatusBadRequest, fmt.Errorf("invoice id cannot be empty"))
+		return errBadRequest(errors.New("id cannot be empty"), c)
 	}
 
 	ctx := c.Request().Context()
 	investor, err := s.investorService.GetInvestor(ctx, req.InvestorID)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return errHandler(err, c)
 	}
 
-	var investorBalance *currency.Amount
-	for _, b := range investor.Balances {
-		if b.CurrencyCode() == bidAmount.CurrencyCode() {
-			investorBalance = &b
-			break
-		}
-	}
-	if investorBalance == nil {
-		return c.JSON(http.StatusBadRequest, fmt.Errorf("no funds in the bidding currency: %s", bidAmount.CurrencyCode()))
-	}
-
-	invoice, err := s.invoiceService.GetInvoice(ctx, invoiceID)
+	remainingPrice, err := s.invoiceService.GetRemainingPrice(ctx, invoiceID)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return errHandler(err, c)
 	}
 
-	remainingPrice := invoice.Price
-	for _, b := range invoice.Bids {
-		remainingPrice, _ = remainingPrice.Sub(b.Amount)
-	}
-
-	if cmp, _ := bidAmount.Cmp(remainingPrice); cmp < 0 {
-		bidAmount = remainingPrice
-	}
-
-	if cmp, _ := bidAmount.Cmp(*investorBalance); cmp < 0 {
-		return c.JSON(http.StatusBadRequest, fmt.Errorf("insufficient funds"))
-	}
-
-	if err := s.investorService.Bid(ctx, investor.ID, bidAmount); err != nil {
-		return c.JSON(http.StatusInternalServerError, fmt.Errorf("could not retire funds from investor"))
+	if err := s.investorService.Bid(ctx, investor.ID, bidAmount, remainingPrice); err != nil {
+		return errHandler(err, c)
 	}
 
 	id, err := s.invoiceService.PlaceBid(ctx, invoiceID, investor.ID, bidAmount)
 	if err != nil {
 		s.broker.SendFailedBidEvent(investor.ID, bidAmount)
-		return c.JSON(http.StatusInternalServerError, fmt.Errorf("could not place bid: %w", err))
+		return errHandler(err, c)
 	}
 
 	return c.JSON(http.StatusCreated, InvoiceBidResponse{
 		ID:     id,
-		Amount: bidAmount.String(),
+		Amount: currFmt.Format(bidAmount),
 		Investor: BidInvestorResponse{
 			ID:       investor.ID,
 			FullName: investor.FullName,
@@ -223,12 +215,12 @@ func (s *Server) Bid(c echo.Context) error {
 func (s *Server) ApproveTrade(c echo.Context) error {
 	var req ApproveTradeRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return errBadRequest(err, c)
 	}
 
 	ctx := c.Request().Context()
 	if err := s.invoiceService.ApproveTrade(ctx, req.InvoiceID, req.Approved); err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return errHandler(err, c)
 	}
 
 	s.broker.SendTradeEvent(req.InvoiceID, req.Approved)

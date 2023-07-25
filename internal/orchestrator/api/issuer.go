@@ -1,9 +1,10 @@
 package api
 
 import (
-	"fmt"
-	"github.com/labstack/echo/v4"
+	"errors"
 	"net/http"
+
+	"github.com/labstack/echo/v4"
 )
 
 type CreateIssuerRequest struct {
@@ -13,8 +14,8 @@ type CreateIssuerRequest struct {
 type IssuerResponse struct {
 	ID       string                  `json:"id"`
 	FullName string                  `json:"fullName"`
-	Balances []string                `json:"balances"`
-	Invoices []IssuerInvoiceResponse `json:"invoices"`
+	Balances []string                `json:"balances,omitempty"`
+	Invoices []IssuerInvoiceResponse `json:"invoices,omitempty"`
 }
 
 type IssuerInvoiceResponse struct {
@@ -37,34 +38,39 @@ func (s *Server) issuerRoutes(g *echo.Group) {
 func (s *Server) CreateIssuer(c echo.Context) error {
 	var req CreateIssuerRequest
 	if err := c.Bind(&req); err != nil {
-		return c.JSON(http.StatusBadRequest, err)
+		return errBadRequest(err, c)
+	}
+	if req.FullName == "" {
+		return errBadRequest(errors.New("issuer name cannot be empty"), c)
 	}
 
 	ctx := c.Request().Context()
 	iss, err := s.issuerService.CreateIssuer(ctx, req.FullName)
 	if err != nil {
-		return c.JSON(http.StatusInternalServerError, fmt.Errorf("could not create investor: %w", err))
+		return errHandler(err, c)
 	}
 
 	return c.JSON(http.StatusCreated, IssuerResponse{
 		ID:       iss.ID,
 		FullName: iss.FullName,
-		Balances: balances(iss.Balances),
 	})
 }
 
 func (s *Server) RetrieveIssuer(c echo.Context) error {
 	id := c.Param("id")
+	if id == "" {
+		return errBadRequest(errors.New("id cannot be empty"), c)
+	}
 
 	ctx := c.Request().Context()
 	iss, err := s.issuerService.GetIssuer(ctx, id)
 	if err != nil {
-		return c.JSON(http.StatusNotFound, err)
+		return errHandler(err, c)
 	}
 
 	invoices, err := s.invoiceService.GetByIssuerID(ctx, id)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, fmt.Errorf("could not retrieve issuer invoices: %w", err))
+	if err != nil && !errors.Is(err, ErrNotFound) {
+		return errHandler(err, c)
 	}
 
 	invoicesRes := make([]IssuerInvoiceResponse, 0, len(invoices))
@@ -73,13 +79,13 @@ func (s *Server) RetrieveIssuer(c echo.Context) error {
 		for _, bid := range inv.Bids {
 			bidsRes = append(bidsRes, IssuerBidResponse{
 				ID:     bid.ID,
-				Amount: bid.Amount.String(),
+				Amount: currFmt.Format(bid.Amount),
 			})
 		}
 
 		invoicesRes = append(invoicesRes, IssuerInvoiceResponse{
 			ID:     inv.ID,
-			Price:  inv.Price.String(),
+			Price:  currFmt.Format(inv.Price),
 			Status: string(inv.Status),
 			Bids:   bidsRes,
 		})

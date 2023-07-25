@@ -3,17 +3,22 @@ package api
 import (
 	"context"
 	"fmt"
+	"io"
+
 	"github.com/bojanz/currency"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/gommon/log"
 	"github.com/nerock/invoicebidder/internal/investor"
 	"github.com/nerock/invoicebidder/internal/invoice"
 	"github.com/nerock/invoicebidder/internal/issuer"
-	"io"
-	"log"
 )
+
+var currFmt = currency.NewFormatter(currency.NewLocale("fr"))
 
 type InvoiceService interface {
 	GetInvoice(context.Context, string) (invoice.Invoice, error)
+	GetRemainingPrice(context.Context, string) (currency.Amount, error)
 	GetByIssuerID(context.Context, string) ([]invoice.Invoice, error)
 	CreateInvoice(context.Context, string, currency.Amount, io.Reader) (invoice.Invoice, error)
 	PlaceBid(context.Context, string, string, currency.Amount) (string, error)
@@ -23,7 +28,7 @@ type InvestorService interface {
 	GetInvestor(context.Context, string) (investor.Investor, error)
 	ListInvestors(context.Context, []string) (map[string]investor.Investor, error)
 	CreateInvestor(context.Context, string, []currency.Amount) (investor.Investor, error)
-	Bid(context.Context, string, currency.Amount) error
+	Bid(context.Context, string, currency.Amount, currency.Amount) error
 }
 
 type IssuerService interface {
@@ -48,8 +53,12 @@ type Server struct {
 }
 
 func New(port int, invoiceService InvoiceService, investorService InvestorService, issuerService IssuerService, broker Broker) *Server {
+	e := echo.New()
+	e.Use(middleware.Logger())
+	e.Pre(middleware.AddTrailingSlash())
+
 	return &Server{
-		e:               echo.New(),
+		e:               e,
 		port:            port,
 		invoiceService:  invoiceService,
 		investorService: investorService,
@@ -79,7 +88,7 @@ func (s *Server) Shutdown(ctx context.Context) error {
 func balances(bs []currency.Amount) []string {
 	balances := make([]string, 0, len(bs))
 	for _, b := range bs {
-		balances = append(balances, b.String())
+		balances = append(balances, currFmt.Format(b))
 	}
 
 	return balances
