@@ -107,7 +107,6 @@ func (b *Broker) eventHandler(wg *sync.WaitGroup, events chan Event) {
 			if e.Retries() > b.maxRetries {
 				log.Printf("max retries exahusted: %s", err)
 			} else {
-				// Log and resend event waiting for it to magically work
 				log.Println(err)
 				events <- e
 			}
