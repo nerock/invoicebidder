@@ -15,6 +15,9 @@ type Config struct {
 		Buffer     int `json:"event_buffer"`
 		MaxRetries int `json:"max_retries"`
 	} `json:"broker"`
+	InvoiceDB  string `json:"invoice_db"`
+	IssuerDB   string `json:"issuer_db"`
+	InvestorDB string `json:"investor_db"`
 }
 
 func (c Config) Validate() error {

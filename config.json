@@ -6,5 +6,8 @@
     "event_handlers": 100,
     "event_buffer": 1000,
     "max_retries": 5
-  }
+  },
+  "invoice_db": "postgres://postgres:postgres@localhost:5432/invoice?sslmode=disable",
+  "issuer_db": "postgres://postgres:postgres@localhost:5432/issuer?sslmode=disable",
+  "investor_db": "postgres://postgres:postgres@localhost:5432/investor?sslmode=disable"
 }
