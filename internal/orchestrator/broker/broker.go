@@ -26,9 +26,10 @@ type IssuerService interface {
 }
 
 type Broker struct {
-	eventWorkers int
-	events       chan Event
-	wg           *sync.WaitGroup
+	maxRetries    int
+	eventHandlers int
+	events        chan Event
+	wg            *sync.WaitGroup
 
 	invoiceService  InvoiceService
 	investorService InvestorService
@@ -36,31 +37,33 @@ type Broker struct {
 }
 
 func (b *Broker) SendTradeEvent(invoiceID string, approved bool) {
-	b.events <- TradeEvent{
+	b.events <- &TradeEvent{
 		InvoiceID: invoiceID,
 		Approved:  approved,
 	}
 }
 
 func (b *Broker) SendFailedBidEvent(investorID string, amount currency.Amount) {
-	b.events <- FailedBidEvent{
+	b.events <- &FailedBidEvent{
 		InvestorID: investorID,
 		Amount:     amount,
 	}
 }
 
-func New(eventWorkers, eventBuffer int, invoiceService InvoiceService, investorService InvestorService, issuerService IssuerService) *Broker {
+func New(eventHandlers, eventBuffer, maxRetries int, invoiceService InvoiceService, investorService InvestorService, issuerService IssuerService) *Broker {
 	return &Broker{
 		invoiceService:  invoiceService,
 		investorService: investorService,
 		issuerService:   issuerService,
 		events:          make(chan Event, eventBuffer), // Random buffer number
+		eventHandlers:   eventHandlers,
+		maxRetries:      maxRetries,
 		wg:              &sync.WaitGroup{},
 	}
 }
 
 func (b *Broker) Serve() error {
-	for i := 0; i < b.eventWorkers; i++ {
+	for i := 0; i < b.eventHandlers; i++ {
 		go b.eventHandler(b.wg, b.events)
 	}
 
@@ -95,24 +98,28 @@ func (b *Broker) eventHandler(wg *sync.WaitGroup, events chan Event) {
 
 		switch e.Type() {
 		case TypeTradeEvent:
-			err = b.tradeEventHandler(e.(TradeEvent))
+			err = b.tradeEventHandler(e.(*TradeEvent))
 		case TypeFailedBidEvent:
-			err = b.failedBidEventHandler(e.(FailedBidEvent))
+			err = b.failedBidEventHandler(e.(*FailedBidEvent))
 		}
 
 		if err != nil {
-			// Log and resend event waiting for it to magically work
-			log.Println(err)
-			events <- e
+			if e.Retries() > b.maxRetries {
+				log.Printf("max retries exahusted: %s", err)
+			} else {
+				// Log and resend event waiting for it to magically work
+				log.Println(err)
+				events <- e
+			}
 		}
 	}
 }
 
-func (b *Broker) failedBidEventHandler(be FailedBidEvent) error {
+func (b *Broker) failedBidEventHandler(be *FailedBidEvent) error {
 	return b.investorService.CancelBid(be.InvestorID, be.Amount)
 }
 
-func (b *Broker) tradeEventHandler(te TradeEvent) error {
+func (b *Broker) tradeEventHandler(te *TradeEvent) error {
 	inv, err := b.invoiceService.GetInvoice(te.InvoiceID)
 	if err != nil {
 		return err
