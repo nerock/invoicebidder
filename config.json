@@ -9,5 +9,6 @@
   },
   "invoice_db": "postgres://postgres:postgres@localhost:5432/invoice?sslmode=disable",
   "issuer_db": "postgres://postgres:postgres@localhost:5432/issuer?sslmode=disable",
-  "investor_db": "postgres://postgres:postgres@localhost:5432/investor?sslmode=disable"
+  "investor_db": "postgres://postgres:postgres@localhost:5432/investor?sslmode=disable",
+  "base_path": "/tmp"
 }

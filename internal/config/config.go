@@ -18,6 +18,7 @@ type Config struct {
 	InvoiceDB  string `json:"invoice_db"`
 	IssuerDB   string `json:"issuer_db"`
 	InvestorDB string `json:"investor_db"`
+	BasePath   string `json:"base_path"`
 }
 
 func (c Config) Validate() error {
