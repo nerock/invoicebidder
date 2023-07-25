@@ -3,26 +3,27 @@ package broker
 import (
 	"context"
 	"fmt"
-	"github.com/bojanz/currency"
-	"github.com/nerock/invoicebidder/internal/invoice"
 	"io"
 	"log"
 	"sync"
+
+	"github.com/bojanz/currency"
+	"github.com/nerock/invoicebidder/internal/invoice"
 )
 
 type InvoiceService interface {
-	GetInvoice(string) (invoice.Invoice, error)
-	CreateInvoice(string, currency.Amount, io.Reader) (invoice.Invoice, error)
-	PlaceBid(string, string, currency.Amount) (string, error)
-	ApproveTrade(string, bool) error
+	GetInvoice(context.Context, string) (invoice.Invoice, error)
+	CreateInvoice(context.Context, string, currency.Amount, io.Reader) (invoice.Invoice, error)
+	PlaceBid(context.Context, string, string, currency.Amount) (string, error)
+	ApproveTrade(context.Context, string, bool) error
 }
 type InvestorService interface {
-	CancelTrade(map[string]currency.Amount) error
-	CancelBid(string, currency.Amount) error
+	CancelTrade(context.Context, map[string]currency.Amount) error
+	CancelBid(context.Context, string, currency.Amount) error
 }
 
 type IssuerService interface {
-	ApproveTrade(string, currency.Amount) error
+	ApproveTrade(context.Context, string, currency.Amount) error
 }
 
 type Broker struct {
@@ -115,11 +116,11 @@ func (b *Broker) eventHandler(wg *sync.WaitGroup, events chan Event) {
 }
 
 func (b *Broker) failedBidEventHandler(be *FailedBidEvent) error {
-	return b.investorService.CancelBid(be.InvestorID, be.Amount)
+	return b.investorService.CancelBid(context.Background(), be.InvestorID, be.Amount)
 }
 
 func (b *Broker) tradeEventHandler(te *TradeEvent) error {
-	inv, err := b.invoiceService.GetInvoice(te.InvoiceID)
+	inv, err := b.invoiceService.GetInvoice(context.Background(), te.InvoiceID)
 	if err != nil {
 		return err
 	}
@@ -134,7 +135,7 @@ func (b *Broker) tradeEventHandler(te *TradeEvent) error {
 }
 
 func (b *Broker) approveTradeEvent(inv invoice.Invoice) error {
-	return b.issuerService.ApproveTrade(inv.IssuerID, inv.Price)
+	return b.issuerService.ApproveTrade(context.Background(), inv.IssuerID, inv.Price)
 }
 
 func (b *Broker) cancelTradeEvent(inv invoice.Invoice) error {
@@ -143,5 +144,5 @@ func (b *Broker) cancelTradeEvent(inv invoice.Invoice) error {
 		invBids[bid.InvestorID] = bid.Amount
 	}
 
-	return b.investorService.CancelTrade(invBids)
+	return b.investorService.CancelTrade(context.Background(), invBids)
 }
