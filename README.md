@@ -3,7 +3,7 @@
 Publish invoices and bid on them
 
 ## Try it
-Hosted in my droplet at `ib.manueladalid.dev` route (careful please cheapest DO tier)
+Hosted in my [droplet](ib.manueladalid.dev/swagger/index.html) route (careful please cheapest DO tier)
 
 ## Design choices
 Although unnecessary for the scope the application is designed as a modular monolith,
@@ -33,7 +33,7 @@ There are other things about the design and its potential pitfalls to be discuss
 - Run image with `make run-docker`
 
 ## Api docs
-- See at `localhost:8080/swagger/`
+- See at `localhost:8080/swagger/index.html`
 - Regenerate with `make gen-docs`
 
 ## Testing
