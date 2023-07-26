@@ -1,6 +1,10 @@
-# invoicebidder
+# Invoice Bidder
 
 Publish invoices and bid on them
+
+## Try it
+Hosted in my droplet at `ib.manueladalid.dev` route (careful please cheapest DO tier)
+Swagger UI only working local for some reason I have yet to investigate
 
 ## Design choices
 Although unnecessary for the scope the application is designed as a modular monolith,
@@ -14,10 +18,10 @@ There's also included a "fake" event broker for asynchronous operations that cou
 a broker could probably be better utilized from the inner services by them publishing their actions and other services reacting to them
 instead of through the orchestrator
 
-There are other things about the design and it's potential pitfalls to be discussed
+There are other things about the design and its potential pitfalls to be discussed
 
 ## Migrations
-- Install tool `go install github.com/golang-migrate/migrate/v4`
+- Install [tool](https://github.com/golang-migrate/migrate/tree/master/cmd/migrate)
 - Update connection details in Makefile
 - Run the migrations either individually or together with `migrate-all`
 
@@ -32,3 +36,6 @@ There are other things about the design and it's potential pitfalls to be discus
 ## Api docs
 - See at `localhost:8080/swagger/`
 - Regenerate with `make gen-docs`
+
+## Testing
+Due to time lmit and not wanting to sacrifice showing other stuff only issuer service and router are tested as examples
