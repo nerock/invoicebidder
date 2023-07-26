@@ -26,7 +26,7 @@ func NewService(st Storage) *Service {
 	}
 }
 
-func (s *Service) CreateInvestor(ctx context.Context, name string, balances []currency.Amount) (Investor, error) {
+func (s *Service) CreateInvestor(ctx context.Context, name string, balance currency.Amount) (Investor, error) {
 	id, err := uuid.NewUUID()
 	if err != nil {
 		return Investor{}, fmt.Errorf("could not generate id: %w", err)
@@ -35,7 +35,7 @@ func (s *Service) CreateInvestor(ctx context.Context, name string, balances []cu
 	investor := Investor{
 		ID:       id.String(),
 		FullName: name,
-		Balances: balances,
+		Balance:  balance,
 	}
 	if err := s.st.CreateInvestor(ctx, investor); err != nil {
 		return Investor{}, nil

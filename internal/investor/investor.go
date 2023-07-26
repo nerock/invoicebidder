@@ -8,5 +8,5 @@ type Investor struct {
 	ID       string
 	FullName string
 	Bids     []string
-	Balances []currency.Amount
+	Balance  currency.Amount
 }
