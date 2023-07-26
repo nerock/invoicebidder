@@ -10,3 +10,8 @@ type Investor struct {
 	Bids     []string
 	Balance  currency.Amount
 }
+
+type Bid struct {
+	InvestorID string
+	Amount     currency.Amount
+}

@@ -62,17 +62,82 @@ func (s *Service) ListInvestors(ctx context.Context, ids []string) (map[string]I
 	return investorsMap, nil
 }
 
-func (s *Service) Bid(ctx context.Context, id string, amount currency.Amount, amount2 currency.Amount) error {
-	//TODO implement me
-	panic("implement me")
+func (s *Service) Bid(ctx context.Context, id string, amount currency.Amount) error {
+	investor, err := s.GetInvestor(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	amount, _ = amount.Mul("-1")
+	newBalance, err := addBalance(investor.Balance, amount)
+	if err != nil {
+		return err
+	}
+
+	if newBalance.IsNegative() {
+		return fmt.Errorf("insufficient funds: %w", err)
+	}
+
+	return s.st.UpdateBalance(ctx, id, newBalance)
 }
 
 func (s *Service) CancelBid(ctx context.Context, id string, amount currency.Amount) error {
-	//TODO implement me
-	panic("implement me")
+	investor, err := s.GetInvestor(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	newBalance, err := addBalance(investor.Balance, amount)
+	if err != nil {
+		return err
+	}
+
+	return s.st.UpdateBalance(ctx, id, newBalance)
 }
 
-func (s *Service) CancelTrade(ctx context.Context, investors map[string]currency.Amount) error {
-	//TODO implement me
-	panic("implement me")
+func (s *Service) CancelTrade(ctx context.Context, bids []Bid) error {
+	investorIDs := make([]string, 0, len(bids))
+	for _, b := range bids {
+		investorIDs = append(investorIDs, b.InvestorID)
+	}
+
+	investors, err := s.st.RetrieveInvestors(ctx, investorIDs)
+	if err != nil {
+		return err
+	}
+
+	newBalances := make(map[string]currency.Amount)
+	for _, inv := range investors {
+		newBalance := inv.Balance
+		for _, b := range bids {
+			if b.InvestorID == inv.ID {
+				var err error
+				newBalance, err = addBalance(newBalance, b.Amount)
+				if err != nil {
+					return err
+				}
+			}
+		}
+
+		newBalances[inv.ID] = newBalance
+	}
+
+	return s.st.UpdateBalances(ctx, newBalances)
+}
+
+func addBalance(current, delta currency.Amount) (currency.Amount, error) {
+	if delta.CurrencyCode() != current.CurrencyCode() {
+		var err error
+		delta, err = delta.Convert(current.CurrencyCode(), "1")
+		if err != nil {
+			return current, err
+		}
+	}
+
+	newBalance, err := current.Add(delta)
+	if err != nil {
+		return current, fmt.Errorf("could not perform currency operation: %w", err)
+	}
+
+	return newBalance, nil
 }
