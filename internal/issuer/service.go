@@ -38,7 +38,7 @@ func (s *Service) CreateIssuer(ctx context.Context, name string) (Issuer, error)
 		Balance:  b,
 	}
 	if err := s.st.CreateIssuer(ctx, issuer); err != nil {
-		return Issuer{}, nil
+		return Issuer{}, err
 	}
 
 	return issuer, nil
