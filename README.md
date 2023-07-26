@@ -4,7 +4,6 @@ Publish invoices and bid on them
 
 ## Try it
 Hosted in my droplet at `ib.manueladalid.dev` route (careful please cheapest DO tier)
-Swagger UI only working local for some reason I have yet to investigate
 
 ## Design choices
 Although unnecessary for the scope the application is designed as a modular monolith,
