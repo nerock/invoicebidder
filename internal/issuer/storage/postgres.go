@@ -33,7 +33,7 @@ func (s *Storage) RetrieveIssuer(ctx context.Context, id string) (issuer.Issuer,
 	iss := issuer.Issuer{ID: id}
 	err := s.c.QueryRow(ctx, query, id).Scan(&iss.FullName, &iss.Balance)
 	if err != nil {
-		return iss, fmt.Errorf("could not retrieve invoice: %w", err)
+		return iss, fmt.Errorf("could not retrieve issuer: %w", err)
 	}
 
 	return iss, nil
@@ -43,7 +43,7 @@ func (s *Storage) UpdateBalance(ctx context.Context, id string, balance currency
 	const query = `UPDATE issuers SET balance = $1 WHERE id = $2`
 
 	if _, err := s.c.Exec(ctx, query, balance, id); err != nil {
-		return fmt.Errorf("could not replace current balance in db: %w", err)
+		return fmt.Errorf("could not replace current issuer balance in db: %w", err)
 	}
 
 	return nil
