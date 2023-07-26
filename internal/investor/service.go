@@ -75,7 +75,7 @@ func (s *Service) Bid(ctx context.Context, id string, amount currency.Amount) er
 	}
 
 	if newBalance.IsNegative() {
-		return fmt.Errorf("insufficient funds: %w", err)
+		return fmt.Errorf("insufficient funds")
 	}
 
 	return s.st.UpdateBalance(ctx, id, newBalance)

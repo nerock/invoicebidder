@@ -43,8 +43,32 @@ func (s *Storage) RetrieveInvestor(ctx context.Context, id string) (investor.Inv
 }
 
 func (s *Storage) RetrieveInvestors(ctx context.Context, ids []string) ([]investor.Investor, error) {
-	//TODO implement me
-	panic("implement me")
+	const query = `SELECT i.id, i.name, i.balance FROM investors i`
+	const withIDs = `WHERE i.id = any($1)`
+
+	var rows pgx.Rows
+	var err error
+	if len(ids) == 0 {
+		rows, err = s.c.Query(ctx, query)
+	} else {
+		rows, err = s.c.Query(ctx, fmt.Sprintf("%s %s", query, withIDs), ids)
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve investors: %w", err)
+	}
+
+	var investors []investor.Investor
+	for rows.Next() {
+		var inv investor.Investor
+		if err := rows.Scan(&inv.ID, &inv.FullName, &inv.Balance); err != nil {
+			return nil, fmt.Errorf("could not scan investors: %w", err)
+		}
+
+		investors = append(investors, inv)
+	}
+
+	return investors, nil
 }
 
 func (s *Storage) UpdateBalance(ctx context.Context, id string, balance currency.Amount) error {
