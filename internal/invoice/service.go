@@ -31,7 +31,10 @@ type Service struct {
 }
 
 func NewService(st Storage, fst FileStorage) *Service {
-	return &Service{}
+	return &Service{
+		st:  st,
+		fst: fst,
+	}
 }
 
 func (s *Service) GetInvoice(ctx context.Context, id string) (Invoice, error) {
