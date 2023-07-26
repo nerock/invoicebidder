@@ -204,7 +204,13 @@ func (s *Server) Bid(c echo.Context) error {
 		return errHandler(err, c)
 	}
 
-	if err := s.investorService.Bid(ctx, investor.ID, bidAmount, remainingPrice); err != nil {
+	if cmp, err := compareAmounts(remainingPrice, bidAmount); err != nil {
+		return errHandler(err, c)
+	} else if cmp < 0 {
+		bidAmount = remainingPrice
+	}
+
+	if err := s.investorService.Bid(ctx, investor.ID, bidAmount); err != nil {
 		return errHandler(err, c)
 	}
 
@@ -238,4 +244,21 @@ func (s *Server) ApproveTrade(c echo.Context) error {
 	s.broker.SendTradeEvent(req.InvoiceID, req.Approved)
 
 	return c.NoContent(http.StatusOK)
+}
+
+func compareAmounts(a, b currency.Amount) (int, error) {
+	if a.CurrencyCode() != b.CurrencyCode() {
+		var err error
+		b, err = b.Convert(b.CurrencyCode(), "1")
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	cmp, err := a.Cmp(b)
+	if err != nil {
+		return 0, err
+	}
+
+	return cmp, nil
 }

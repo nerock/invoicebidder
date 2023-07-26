@@ -48,7 +48,7 @@ type InvestorService interface {
 	GetInvestor(context.Context, string) (investor.Investor, error)
 	ListInvestors(context.Context, []string) (map[string]investor.Investor, error)
 	CreateInvestor(context.Context, string, currency.Amount) (investor.Investor, error)
-	Bid(context.Context, string, currency.Amount, currency.Amount) error
+	Bid(context.Context, string, currency.Amount) error
 }
 
 func (s *Server) investorRoutes(g *echo.Group) {
