@@ -12,36 +12,21 @@ import (
 )
 
 type CreateInvestorRequest struct {
-	FullName string        `json:"fullName"`
+	FullName string        `json:"fullName" example:"Manuel Adalid"`
 	Balance  AmountRequest `json:"balance"`
 }
 
-type UpdateInvestorRequest struct {
-	ID           string `json:"id"`
-	BalanceDelta string `json:"balance"`
-}
-
 type InvestorBidResponse struct {
-	ID      string             `json:"id"`
-	Amount  string             `json:"amount"`
+	ID      string             `json:"id" example:"343abd7a-874c-4bb7-ba7b-81e9c71cf1b0"`
+	Amount  string             `json:"amount" example:"1 230,45 €"`
 	Invoice InvoiceBidResponse `json:"invoice"`
 }
 
-type BidInvoiceResponse struct {
-	ID     string `json:"id"`
-	Status string `json:"status"`
-}
-
 type InvestorResponse struct {
-	ID       string                `json:"id"`
-	FullName string                `json:"fullName"`
-	Balance  string                `json:"balance,omitempty"`
+	ID       string                `json:"id" example:"343abd7a-874c-4bb7-ba7b-81e9c71cf1b0"`
+	FullName string                `json:"fullName" example:"Manuel Adalid"`
+	Balance  string                `json:"balance,omitempty" example:"1 230,45 €"`
 	Bids     []BidInvestorResponse `json:"bids,omitempty"`
-}
-
-type AmountRequest struct {
-	Amount   string `json:"amount"`
-	Currency string `json:"currency"`
 }
 
 type InvestorService interface {
@@ -56,6 +41,17 @@ func (s *Server) investorRoutes(g *echo.Group) {
 	g.GET("", s.ListInvestors)
 }
 
+// CreateInvestor creates a new investor
+// @Summary      New investor
+// @Description  Create a new investor to bid on invoices
+// @Tags         investor
+// @Accept       json
+// @Produce      json
+// @Param request body CreateInvestorRequest true "Issuer request"
+// @Success      201  {object}  InvestorResponse
+// @Failure      400  {object}  HTTPError
+// @Failure      500  {object}  HTTPError
+// @Router       /investor [post]
 func (s *Server) CreateInvestor(c echo.Context) error {
 	var req CreateInvestorRequest
 	if err := c.Bind(&req); err != nil {
@@ -80,6 +76,16 @@ func (s *Server) CreateInvestor(c echo.Context) error {
 	})
 }
 
+// ListInvestors retrieves investors
+// @Summary      List investors
+// @Description  Retrieve investors optionally filtering by ids
+// @Tags         investor
+// @Accept       json
+// @Produce      json
+// @Param ids query []string false "list of comma separated ids for filtering"
+// @Success      200  {array}   InvestorResponse
+// @Failure      500  {object}  HTTPError
+// @Router       /investor [get]
 func (s *Server) ListInvestors(c echo.Context) error {
 	param := c.QueryParam("ids")
 	var ids []string

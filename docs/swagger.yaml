@@ -1,0 +1,424 @@
+definitions:
+  api.AmountRequest:
+    properties:
+      amount:
+        example: "1200.50"
+        type: string
+      currency:
+        example: EUR
+        type: string
+    type: object
+  api.ApproveTradeRequest:
+    properties:
+      approve:
+        example: true
+        type: boolean
+    type: object
+  api.BidInvestorResponse:
+    properties:
+      fullName:
+        example: Manuel Adalid
+        type: string
+      id:
+        example: 343abd7a-874c-4bb7-ba7b-81e9c71cf1b0
+        type: string
+    type: object
+  api.BidRequest:
+    properties:
+      amount:
+        $ref: '#/definitions/api.AmountRequest'
+      investorId:
+        example: 343abd7a-874c-4bb7-ba7b-81e9c71cf1b0
+        type: string
+    type: object
+  api.CreateInvestorRequest:
+    properties:
+      balance:
+        $ref: '#/definitions/api.AmountRequest'
+      fullName:
+        example: Manuel Adalid
+        type: string
+    type: object
+  api.CreateIssuerRequest:
+    properties:
+      fullName:
+        type: string
+    type: object
+  api.HTTPError:
+    properties:
+      error:
+        type: string
+    type: object
+  api.InvestorResponse:
+    properties:
+      balance:
+        example: 1 230,45 €
+        type: string
+      bids:
+        items:
+          $ref: '#/definitions/api.BidInvestorResponse'
+        type: array
+      fullName:
+        example: Manuel Adalid
+        type: string
+      id:
+        example: 343abd7a-874c-4bb7-ba7b-81e9c71cf1b0
+        type: string
+    type: object
+  api.InvoiceBidResponse:
+    properties:
+      id:
+        example: 343abd7a-874c-4bb7-ba7b-81e9c71cf1b0
+        type: string
+      investor:
+        $ref: '#/definitions/api.BidInvestorResponse'
+      string:
+        example: 1 230,45 €
+        type: string
+    type: object
+  api.InvoiceIssuerResponse:
+    properties:
+      fullName:
+        example: Manuel Adalid
+        type: string
+      id:
+        example: 343abd7a-874c-4bb7-ba7b-81e9c71cf1b0
+        type: string
+    type: object
+  api.InvoiceResponse:
+    properties:
+      bids:
+        items:
+          $ref: '#/definitions/api.InvoiceBidResponse'
+        type: array
+      id:
+        example: 343abd7a-874c-4bb7-ba7b-81e9c71cf1b0
+        type: string
+      issuer:
+        $ref: '#/definitions/api.InvoiceIssuerResponse'
+      price:
+        example: 1 230,45 €
+        type: string
+      status:
+        example: open
+        type: string
+    type: object
+  api.IssuerBidResponse:
+    properties:
+      id:
+        example: 343abd7a-874c-4bb7-ba7b-81e9c71cf1b0
+        type: string
+      string:
+        example: 1 230,45 €
+        type: string
+    type: object
+  api.IssuerInvoiceResponse:
+    properties:
+      bids:
+        items:
+          $ref: '#/definitions/api.IssuerBidResponse'
+        type: array
+      id:
+        example: 343abd7a-874c-4bb7-ba7b-81e9c71cf1b0
+        type: string
+      price:
+        example: 1 230,45 €
+        type: string
+      status:
+        example: open
+        type: string
+    type: object
+  api.IssuerResponse:
+    properties:
+      balance:
+        example: 1 230,45 €
+        type: string
+      fullName:
+        example: Manuel Adalid
+        type: string
+      id:
+        example: 343abd7a-874c-4bb7-ba7b-81e9c71cf1b0
+        type: string
+      invoices:
+        items:
+          $ref: '#/definitions/api.IssuerInvoiceResponse'
+        type: array
+    type: object
+info:
+  contact:
+    email: manueladalidmoya@gmail.com
+    name: Manuel Adalid
+    url: https://manueladalid.dev
+  description: Create invoices and bid on them
+  title: Invoice Bidder API
+  version: "0.1"
+paths:
+  /investor:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve investors optionally filtering by ids
+      parameters:
+      - collectionFormat: csv
+        description: list of comma separated ids for filtering
+        in: query
+        items:
+          type: string
+        name: ids
+        type: array
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/api.InvestorResponse'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.HTTPError'
+      summary: List investors
+      tags:
+      - investor
+    post:
+      consumes:
+      - application/json
+      description: Create a new investor to bid on invoices
+      parameters:
+      - description: Issuer request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.CreateInvestorRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.InvestorResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.HTTPError'
+      summary: New investor
+      tags:
+      - investor
+  /invoice:
+    get:
+      description: Retrieve an invoice by ID
+      parameters:
+      - description: Invoice id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.InvoiceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.HTTPError'
+      summary: Get Invoice
+      tags:
+      - invoice
+    post:
+      consumes:
+      - application/x-www-form-urlencoded
+      description: Create a new invoice to sell
+      parameters:
+      - description: ID of publishing issuer
+        in: formData
+        name: issuer_id
+        required: true
+        type: string
+      - description: Price string
+        in: formData
+        name: price
+        required: true
+        type: string
+      - description: Currency code
+        in: formData
+        name: currency
+        required: true
+        type: string
+      - description: Invoice file
+        in: formData
+        name: invoice
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.InvoiceResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.HTTPError'
+      summary: New invoice
+      tags:
+      - invoice
+  /invoice/:id/bid:
+    post:
+      consumes:
+      - application/json
+      description: Places a bid in an invoice
+      parameters:
+      - description: Invoice id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Bid request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.BidRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.InvoiceBidResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.HTTPError'
+      summary: Bid on invoice
+      tags:
+      - invoice
+  /invoice/:id/trade:
+    post:
+      consumes:
+      - application/json
+      description: Approves or cancels an invoice trade
+      parameters:
+      - description: Invoice id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Trade request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.ApproveTradeRequest'
+      responses:
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.HTTPError'
+      summary: Approve invoice trade
+      tags:
+      - invoice
+  /issuer:
+    get:
+      description: Retrieve an issuer by ID
+      parameters:
+      - description: Issuer id
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.IssuerResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.HTTPError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/api.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.HTTPError'
+      summary: Get Issuer
+      tags:
+      - issuer
+    post:
+      consumes:
+      - application/json
+      description: Create a new issuer to sell invoices
+      parameters:
+      - description: Issuer request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/api.CreateIssuerRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/api.IssuerResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/api.HTTPError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/api.HTTPError'
+      summary: New issuer
+      tags:
+      - issuer
+swagger: "2.0"

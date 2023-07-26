@@ -22,6 +22,9 @@ build-docker:
 run-docker:
 	docker run -dp 8080:8080 ibidder
 
+gen-docs:
+	 swag init -g internal/orchestrator/api/server.go --output docs/
+
 build:
 	go build -o bin/ cmd/ibidder.go
 

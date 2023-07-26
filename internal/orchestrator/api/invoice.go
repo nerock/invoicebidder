@@ -13,35 +13,35 @@ import (
 )
 
 type InvoiceResponse struct {
-	ID     string                `json:"id"`
-	Price  string                `json:"price"`
-	Status string                `json:"status"`
+	ID     string                `json:"id" example:"343abd7a-874c-4bb7-ba7b-81e9c71cf1b0"`
+	Price  string                `json:"price" example:"1 230,45 €"`
+	Status string                `json:"status" example:"open"`
 	Issuer InvoiceIssuerResponse `json:"issuer"`
 	Bids   []InvoiceBidResponse  `json:"bids,omitempty"`
 }
 
 type InvoiceIssuerResponse struct {
-	ID       string `json:"id"`
-	FullName string `json:"fullName"`
+	ID       string `json:"id" example:"343abd7a-874c-4bb7-ba7b-81e9c71cf1b0"`
+	FullName string `json:"fullName" example:"Manuel Adalid"`
 }
 
 type InvoiceBidResponse struct {
-	ID       string `json:"id"`
-	Amount   string `json:"string"`
+	ID       string `json:"id" example:"343abd7a-874c-4bb7-ba7b-81e9c71cf1b0"`
+	Amount   string `json:"string" example:"1 230,45 €"`
 	Investor BidInvestorResponse
 }
 
 type BidInvestorResponse struct {
-	ID       string `json:"id"`
-	FullName string `json:"fullName"`
+	ID       string `json:"id" example:"343abd7a-874c-4bb7-ba7b-81e9c71cf1b0"`
+	FullName string `json:"fullName" example:"Manuel Adalid"`
 }
 
 type ApproveTradeRequest struct {
-	Approved bool `json:"approve"`
+	Approved bool `json:"approve" example:"true"`
 }
 
 type BidRequest struct {
-	InvestorID string        `json:"investorId"`
+	InvestorID string        `json:"investorId" example:"343abd7a-874c-4bb7-ba7b-81e9c71cf1b0"`
 	Amount     AmountRequest `json:"amount"`
 }
 
@@ -61,6 +61,21 @@ func (s *Server) invoiceRoutes(g *echo.Group) {
 	g.POST("/:id/trade", s.ApproveTrade)
 }
 
+// CreateInvoice creates a new invoice
+// @Summary      New invoice
+// @Description  Create a new invoice to sell
+// @Tags         invoice
+// @Accept       x-www-form-urlencoded
+// @Produce      json
+// @Param issuer_id formData string true "ID of publishing issuer"
+// @Param price formData string true "Price string"
+// @Param currency formData string true "Currency code"
+// @Param invoice formData file true "Invoice file"
+// @Success      201  {object}   InvoiceResponse
+// @Failure      400  {object}  HTTPError
+// @Failure      404  {object}  HTTPError
+// @Failure      500  {object}  HTTPError
+// @Router       /invoice [post]
 func (s *Server) CreateInvoice(c echo.Context) error {
 	issID := c.FormValue("issuer_id")
 	if issID == "" {
@@ -117,6 +132,17 @@ func (s *Server) CreateInvoice(c echo.Context) error {
 	})
 }
 
+// RetrieveInvoice retrieves an invoice by ID
+// @Summary      Get Invoice
+// @Description  Retrieve an invoice by ID
+// @Tags         invoice
+// @Produce      json
+// @Param id path string true "Invoice id"
+// @Success      200  {object}  InvoiceResponse
+// @Failure      400  {object}  HTTPError
+// @Failure      404  {object}  HTTPError
+// @Failure      500  {object}  HTTPError
+// @Router       /invoice [get]
 func (s *Server) RetrieveInvoice(c echo.Context) error {
 	id := c.Param("id")
 	if id == "" {
@@ -177,6 +203,19 @@ func (s *Server) RetrieveInvoice(c echo.Context) error {
 	return c.JSON(http.StatusOK, res)
 }
 
+// Bid places a bid into an invoice
+// @Summary      Bid on invoice
+// @Description  Places a bid in an invoice
+// @Tags         invoice
+// @Accept       json
+// @Produce      json
+// @Param id path string true "Invoice id"
+// @Param request body BidRequest true "Bid request"
+// @Success      201  {object}  InvoiceBidResponse
+// @Failure      400  {object}  HTTPError
+// @Failure      404  {object}  HTTPError
+// @Failure      500  {object}  HTTPError
+// @Router       /invoice/:id/bid [post]
 func (s *Server) Bid(c echo.Context) error {
 	var req BidRequest
 	if err := c.Bind(&req); err != nil {
@@ -229,6 +268,17 @@ func (s *Server) Bid(c echo.Context) error {
 	})
 }
 
+// ApproveTrade approves or cancels a trade in an invoice
+// @Summary      Approve invoice trade
+// @Description  Approves or cancels an invoice trade
+// @Tags         invoice
+// @Accept       json
+// @Param id path string true "Invoice id"
+// @Param request body ApproveTradeRequest true "Trade request"
+// @Failure      400  {object}  HTTPError
+// @Failure      404  {object}  HTTPError
+// @Failure      500  {object}  HTTPError
+// @Router       /invoice/:id/trade [post]
 func (s *Server) ApproveTrade(c echo.Context) error {
 	invoiceID := c.Param("id")
 	if invoiceID == "" {

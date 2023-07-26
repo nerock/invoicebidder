@@ -4,13 +4,21 @@ import (
 	"context"
 	"fmt"
 
+	echoSwagger "github.com/swaggo/echo-swagger"
+
 	"github.com/bojanz/currency"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
+	_ "github.com/nerock/invoicebidder/docs"
 )
 
 var currFmt = currency.NewFormatter(currency.NewLocale("fr"))
+
+type AmountRequest struct {
+	Amount   string `json:"amount" example:"1200.50"`
+	Currency string `json:"currency" example:"EUR"`
+}
 
 type Broker interface {
 	SendTradeEvent(string, []string, bool)
@@ -28,6 +36,13 @@ type Server struct {
 	broker Broker
 }
 
+// New creates a new server
+// @title Invoice Bidder API
+// @version 0.1
+// @description Create invoices and bid on them
+// @contact.name Manuel Adalid
+// @contact.url https://manueladalid.dev
+// @contact.email manueladalidmoya@gmail.com
 func New(port int, invoiceService InvoiceService, investorService InvestorService, issuerService IssuerService, broker Broker) *Server {
 	e := echo.New()
 	e.Use(middleware.Logger())
@@ -44,6 +59,8 @@ func New(port int, invoiceService InvoiceService, investorService InvestorServic
 }
 
 func (s *Server) Serve() error {
+	s.e.GET("/swagger/*", echoSwagger.WrapHandler)
+
 	s.issuerRoutes(s.e.Group("/issuer"))
 	s.investorRoutes(s.e.Group("/investor"))
 	s.invoiceRoutes(s.e.Group("/invoice"))

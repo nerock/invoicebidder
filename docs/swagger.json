@@ -1,0 +1,633 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Create invoices and bid on them",
+        "title": "Invoice Bidder API",
+        "contact": {
+            "name": "Manuel Adalid",
+            "url": "https://manueladalid.dev",
+            "email": "manueladalidmoya@gmail.com"
+        },
+        "version": "0.1"
+    },
+    "paths": {
+        "/investor": {
+            "get": {
+                "description": "Retrieve investors optionally filtering by ids",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "investor"
+                ],
+                "summary": "List investors",
+                "parameters": [
+                    {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "collectionFormat": "csv",
+                        "description": "list of comma separated ids for filtering",
+                        "name": "ids",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/api.InvestorResponse"
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.HTTPError"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new investor to bid on invoices",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "investor"
+                ],
+                "summary": "New investor",
+                "parameters": [
+                    {
+                        "description": "Issuer request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.CreateInvestorRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.InvestorResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
+        "/invoice": {
+            "get": {
+                "description": "Retrieve an invoice by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "invoice"
+                ],
+                "summary": "Get Invoice",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Invoice id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.InvoiceResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.HTTPError"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new invoice to sell",
+                "consumes": [
+                    "application/x-www-form-urlencoded"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "invoice"
+                ],
+                "summary": "New invoice",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID of publishing issuer",
+                        "name": "issuer_id",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Price string",
+                        "name": "price",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Currency code",
+                        "name": "currency",
+                        "in": "formData",
+                        "required": true
+                    },
+                    {
+                        "type": "file",
+                        "description": "Invoice file",
+                        "name": "invoice",
+                        "in": "formData",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.InvoiceResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
+        "/invoice/:id/bid": {
+            "post": {
+                "description": "Places a bid in an invoice",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "invoice"
+                ],
+                "summary": "Bid on invoice",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Invoice id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Bid request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.BidRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.InvoiceBidResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
+        "/invoice/:id/trade": {
+            "post": {
+                "description": "Approves or cancels an invoice trade",
+                "consumes": [
+                    "application/json"
+                ],
+                "tags": [
+                    "invoice"
+                ],
+                "summary": "Approve invoice trade",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Invoice id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Trade request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.ApproveTradeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.HTTPError"
+                        }
+                    }
+                }
+            }
+        },
+        "/issuer": {
+            "get": {
+                "description": "Retrieve an issuer by ID",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "issuer"
+                ],
+                "summary": "Get Issuer",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Issuer id",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/api.IssuerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.HTTPError"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/api.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.HTTPError"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new issuer to sell invoices",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "issuer"
+                ],
+                "summary": "New issuer",
+                "parameters": [
+                    {
+                        "description": "Issuer request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/api.CreateIssuerRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/api.IssuerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/api.HTTPError"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/api.HTTPError"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "api.AmountRequest": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "string",
+                    "example": "1200.50"
+                },
+                "currency": {
+                    "type": "string",
+                    "example": "EUR"
+                }
+            }
+        },
+        "api.ApproveTradeRequest": {
+            "type": "object",
+            "properties": {
+                "approve": {
+                    "type": "boolean",
+                    "example": true
+                }
+            }
+        },
+        "api.BidInvestorResponse": {
+            "type": "object",
+            "properties": {
+                "fullName": {
+                    "type": "string",
+                    "example": "Manuel Adalid"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "343abd7a-874c-4bb7-ba7b-81e9c71cf1b0"
+                }
+            }
+        },
+        "api.BidRequest": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "$ref": "#/definitions/api.AmountRequest"
+                },
+                "investorId": {
+                    "type": "string",
+                    "example": "343abd7a-874c-4bb7-ba7b-81e9c71cf1b0"
+                }
+            }
+        },
+        "api.CreateInvestorRequest": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "$ref": "#/definitions/api.AmountRequest"
+                },
+                "fullName": {
+                    "type": "string",
+                    "example": "Manuel Adalid"
+                }
+            }
+        },
+        "api.CreateIssuerRequest": {
+            "type": "object",
+            "properties": {
+                "fullName": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.HTTPError": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "api.InvestorResponse": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "type": "string",
+                    "example": "1 230,45 €"
+                },
+                "bids": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.BidInvestorResponse"
+                    }
+                },
+                "fullName": {
+                    "type": "string",
+                    "example": "Manuel Adalid"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "343abd7a-874c-4bb7-ba7b-81e9c71cf1b0"
+                }
+            }
+        },
+        "api.InvoiceBidResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "343abd7a-874c-4bb7-ba7b-81e9c71cf1b0"
+                },
+                "investor": {
+                    "$ref": "#/definitions/api.BidInvestorResponse"
+                },
+                "string": {
+                    "type": "string",
+                    "example": "1 230,45 €"
+                }
+            }
+        },
+        "api.InvoiceIssuerResponse": {
+            "type": "object",
+            "properties": {
+                "fullName": {
+                    "type": "string",
+                    "example": "Manuel Adalid"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "343abd7a-874c-4bb7-ba7b-81e9c71cf1b0"
+                }
+            }
+        },
+        "api.InvoiceResponse": {
+            "type": "object",
+            "properties": {
+                "bids": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.InvoiceBidResponse"
+                    }
+                },
+                "id": {
+                    "type": "string",
+                    "example": "343abd7a-874c-4bb7-ba7b-81e9c71cf1b0"
+                },
+                "issuer": {
+                    "$ref": "#/definitions/api.InvoiceIssuerResponse"
+                },
+                "price": {
+                    "type": "string",
+                    "example": "1 230,45 €"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "open"
+                }
+            }
+        },
+        "api.IssuerBidResponse": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "example": "343abd7a-874c-4bb7-ba7b-81e9c71cf1b0"
+                },
+                "string": {
+                    "type": "string",
+                    "example": "1 230,45 €"
+                }
+            }
+        },
+        "api.IssuerInvoiceResponse": {
+            "type": "object",
+            "properties": {
+                "bids": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.IssuerBidResponse"
+                    }
+                },
+                "id": {
+                    "type": "string",
+                    "example": "343abd7a-874c-4bb7-ba7b-81e9c71cf1b0"
+                },
+                "price": {
+                    "type": "string",
+                    "example": "1 230,45 €"
+                },
+                "status": {
+                    "type": "string",
+                    "example": "open"
+                }
+            }
+        },
+        "api.IssuerResponse": {
+            "type": "object",
+            "properties": {
+                "balance": {
+                    "type": "string",
+                    "example": "1 230,45 €"
+                },
+                "fullName": {
+                    "type": "string",
+                    "example": "Manuel Adalid"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "343abd7a-874c-4bb7-ba7b-81e9c71cf1b0"
+                },
+                "invoices": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/api.IssuerInvoiceResponse"
+                    }
+                }
+            }
+        }
+    }
+}

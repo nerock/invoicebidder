@@ -42,7 +42,7 @@ func (m *mockInvoiceService) PlaceBid(ctx context.Context, s string, s2 string, 
 	panic("implement me")
 }
 
-func (m *mockInvoiceService) ApproveTrade(ctx context.Context, s string, b bool) error {
+func (m *mockInvoiceService) ApproveTrade(ctx context.Context, s string, b bool) ([]string, error) {
 	panic("implement me")
 }
 

@@ -15,22 +15,22 @@ type CreateIssuerRequest struct {
 }
 
 type IssuerResponse struct {
-	ID       string                  `json:"id"`
-	FullName string                  `json:"fullName"`
-	Balance  string                  `json:"balance,omitempty"`
+	ID       string                  `json:"id" example:"343abd7a-874c-4bb7-ba7b-81e9c71cf1b0"`
+	FullName string                  `json:"fullName" example:"Manuel Adalid"`
+	Balance  string                  `json:"balance,omitempty" example:"1 230,45 €"`
 	Invoices []IssuerInvoiceResponse `json:"invoices,omitempty"`
 }
 
 type IssuerInvoiceResponse struct {
-	ID     string              `json:"id"`
-	Price  string              `json:"price"`
-	Status string              `json:"status"`
+	ID     string              `json:"id" example:"343abd7a-874c-4bb7-ba7b-81e9c71cf1b0"`
+	Price  string              `json:"price" example:"1 230,45 €"`
+	Status string              `json:"status" example:"open"`
 	Bids   []IssuerBidResponse `json:"bids,omitempty"`
 }
 
 type IssuerBidResponse struct {
-	ID     string `json:"id"`
-	Amount string `json:"string"`
+	ID     string `json:"id" example:"343abd7a-874c-4bb7-ba7b-81e9c71cf1b0"`
+	Amount string `json:"string" example:"1 230,45 €"`
 }
 
 type IssuerService interface {
@@ -43,6 +43,17 @@ func (s *Server) issuerRoutes(g *echo.Group) {
 	g.GET("/:id", s.RetrieveIssuer)
 }
 
+// CreateIssuer creates a new issuer
+// @Summary      New issuer
+// @Description  Create a new issuer to sell invoices
+// @Tags         issuer
+// @Accept       json
+// @Produce      json
+// @Param request body CreateIssuerRequest true "Issuer request"
+// @Success      201  {object}  IssuerResponse
+// @Failure      400  {object}  HTTPError
+// @Failure      500  {object}  HTTPError
+// @Router       /issuer [post]
 func (s *Server) CreateIssuer(c echo.Context) error {
 	var req CreateIssuerRequest
 	if err := c.Bind(&req); err != nil {
@@ -64,6 +75,17 @@ func (s *Server) CreateIssuer(c echo.Context) error {
 	})
 }
 
+// RetrieveIssuer retrieves an issuer by ID
+// @Summary      Get Issuer
+// @Description  Retrieve an issuer by ID
+// @Tags         issuer
+// @Produce      json
+// @Param id path string true "Issuer id"
+// @Success      200  {object}  IssuerResponse
+// @Failure      400  {object}  HTTPError
+// @Failure      404  {object}  HTTPError
+// @Failure      500  {object}  HTTPError
+// @Router       /issuer [get]
 func (s *Server) RetrieveIssuer(c echo.Context) error {
 	id := c.Param("id")
 	if id == "" {
