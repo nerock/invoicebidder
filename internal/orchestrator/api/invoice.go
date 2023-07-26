@@ -1,12 +1,15 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 
 	"github.com/bojanz/currency"
 	"github.com/labstack/echo/v4"
+	"github.com/nerock/invoicebidder/internal/invoice"
 )
 
 type InvoiceResponse struct {
@@ -39,8 +42,17 @@ type ApproveTradeRequest struct {
 }
 
 type BidRequest struct {
-	InvestorID string `json:"investorId"`
-	Amount     Amount `json:"amount"`
+	InvestorID string                `json:"investorId"`
+	Amount     InvestorAmountRequest `json:"amount"`
+}
+
+type InvoiceService interface {
+	GetInvoice(context.Context, string) (invoice.Invoice, error)
+	GetRemainingPrice(context.Context, string) (currency.Amount, error)
+	GetByIssuerID(context.Context, string) ([]invoice.Invoice, error)
+	CreateInvoice(context.Context, string, currency.Amount, io.Reader) (invoice.Invoice, error)
+	PlaceBid(context.Context, string, string, currency.Amount) (string, error)
+	ApproveTrade(context.Context, string, bool) error
 }
 
 func (s *Server) invoiceRoutes(g *echo.Group) {

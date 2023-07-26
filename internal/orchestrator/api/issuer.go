@@ -1,8 +1,11 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"net/http"
+
+	"github.com/nerock/invoicebidder/internal/issuer"
 
 	"github.com/labstack/echo/v4"
 )
@@ -28,6 +31,11 @@ type IssuerInvoiceResponse struct {
 type IssuerBidResponse struct {
 	ID     string `json:"id"`
 	Amount string `json:"string"`
+}
+
+type IssuerService interface {
+	GetIssuer(context.Context, string) (issuer.Issuer, error)
+	CreateIssuer(context.Context, string) (issuer.Issuer, error)
 }
 
 func (s *Server) issuerRoutes(g *echo.Group) {

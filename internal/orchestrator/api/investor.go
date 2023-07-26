@@ -1,17 +1,19 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
 
 	"github.com/bojanz/currency"
 	"github.com/labstack/echo/v4"
+	"github.com/nerock/invoicebidder/internal/investor"
 )
 
 type CreateInvestorRequest struct {
-	FullName string `json:"fullName"`
-	Balance  Amount `json:"balance"`
+	FullName string                `json:"fullName"`
+	Balance  InvestorAmountRequest `json:"balance"`
 }
 
 type UpdateInvestorRequest struct {
@@ -37,9 +39,16 @@ type InvestorResponse struct {
 	Bids     []BidInvestorResponse `json:"bids,omitempty"`
 }
 
-type Amount struct {
+type InvestorAmountRequest struct {
 	Amount   string `json:"amount"`
 	Currency string `json:"currency"`
+}
+
+type InvestorService interface {
+	GetInvestor(context.Context, string) (investor.Investor, error)
+	ListInvestors(context.Context, []string) (map[string]investor.Investor, error)
+	CreateInvestor(context.Context, string, currency.Amount) (investor.Investor, error)
+	Bid(context.Context, string, currency.Amount, currency.Amount) error
 }
 
 func (s *Server) investorRoutes(g *echo.Group) {
