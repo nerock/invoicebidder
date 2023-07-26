@@ -17,6 +17,7 @@ type Event interface {
 
 type TradeEvent struct {
 	InvoiceID string
+	Bids      []string
 	Approved  bool
 	r         int
 }

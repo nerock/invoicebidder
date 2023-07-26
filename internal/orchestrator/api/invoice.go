@@ -37,13 +37,12 @@ type BidInvestorResponse struct {
 }
 
 type ApproveTradeRequest struct {
-	InvoiceID string `json:"invoiceId"`
-	Approved  bool   `json:"approve"`
+	Approved bool `json:"approve"`
 }
 
 type BidRequest struct {
-	InvestorID string                `json:"investorId"`
-	Amount     InvestorAmountRequest `json:"amount"`
+	InvestorID string        `json:"investorId"`
+	Amount     AmountRequest `json:"amount"`
 }
 
 type InvoiceService interface {
@@ -52,7 +51,7 @@ type InvoiceService interface {
 	GetByIssuerID(context.Context, string) ([]invoice.Invoice, error)
 	CreateInvoice(context.Context, string, currency.Amount, io.Reader) (invoice.Invoice, error)
 	PlaceBid(context.Context, string, string, currency.Amount) (string, error)
-	ApproveTrade(context.Context, string, bool) error
+	ApproveTrade(context.Context, string, bool) ([]string, error)
 }
 
 func (s *Server) invoiceRoutes(g *echo.Group) {
@@ -231,17 +230,23 @@ func (s *Server) Bid(c echo.Context) error {
 }
 
 func (s *Server) ApproveTrade(c echo.Context) error {
+	invoiceID := c.Param("id")
+	if invoiceID == "" {
+		return errBadRequest(errors.New("id cannot be empty"), c)
+	}
+
 	var req ApproveTradeRequest
 	if err := c.Bind(&req); err != nil {
 		return errBadRequest(err, c)
 	}
 
 	ctx := c.Request().Context()
-	if err := s.invoiceService.ApproveTrade(ctx, req.InvoiceID, req.Approved); err != nil {
+	bids, err := s.invoiceService.ApproveTrade(ctx, invoiceID, req.Approved)
+	if err != nil {
 		return errHandler(err, c)
 	}
 
-	s.broker.SendTradeEvent(req.InvoiceID, req.Approved)
+	s.broker.SendTradeEvent(invoiceID, bids, req.Approved)
 
 	return c.NoContent(http.StatusOK)
 }

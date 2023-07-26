@@ -14,7 +14,7 @@ import (
 
 type InvoiceService interface {
 	GetInvoice(context.Context, string) (invoice.Invoice, error)
-	ApproveTrade(context.Context, string, bool) error
+	ListBidsByIDs(context.Context, []string) ([]invoice.Bid, error)
 }
 type InvestorService interface {
 	CancelTrade(context.Context, []investor.Bid) error
@@ -36,9 +36,10 @@ type Broker struct {
 	issuerService   IssuerService
 }
 
-func (b *Broker) SendTradeEvent(invoiceID string, approved bool) {
+func (b *Broker) SendTradeEvent(invoiceID string, bidsIDs []string, approved bool) {
 	b.events <- &TradeEvent{
 		InvoiceID: invoiceID,
+		Bids:      bidsIDs,
 		Approved:  approved,
 	}
 }
@@ -119,27 +120,33 @@ func (b *Broker) failedBidEventHandler(be *FailedBidEvent) error {
 }
 
 func (b *Broker) tradeEventHandler(te *TradeEvent) error {
-	inv, err := b.invoiceService.GetInvoice(context.Background(), te.InvoiceID)
-	if err != nil {
-		return err
-	}
-
+	var err error
 	if te.Approved {
-		err = b.approveTradeEvent(inv)
+		err = b.approveTradeEvent(te.InvoiceID)
 	} else {
-		err = b.cancelTradeEvent(inv)
+		err = b.cancelTradeEvent(te.Bids)
 	}
 
 	return err
 }
 
-func (b *Broker) approveTradeEvent(inv invoice.Invoice) error {
+func (b *Broker) approveTradeEvent(invoiceID string) error {
+	inv, err := b.invoiceService.GetInvoice(context.Background(), invoiceID)
+	if err != nil {
+		return err
+	}
+
 	return b.issuerService.ApproveTrade(context.Background(), inv.IssuerID, inv.Price)
 }
 
-func (b *Broker) cancelTradeEvent(inv invoice.Invoice) error {
-	invBids := make([]investor.Bid, len(inv.Bids))
-	for _, bid := range inv.Bids {
+func (b *Broker) cancelTradeEvent(bidsIDs []string) error {
+	bids, err := b.invoiceService.ListBidsByIDs(context.Background(), bidsIDs)
+	if err != nil {
+		return err
+	}
+
+	invBids := make([]investor.Bid, len(bids))
+	for _, bid := range bids {
 		invBids = append(invBids, investor.Bid{
 			InvestorID: bid.InvestorID,
 			Amount:     bid.Amount,

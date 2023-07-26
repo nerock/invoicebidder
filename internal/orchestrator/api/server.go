@@ -13,7 +13,7 @@ import (
 var currFmt = currency.NewFormatter(currency.NewLocale("fr"))
 
 type Broker interface {
-	SendTradeEvent(string, bool)
+	SendTradeEvent(string, []string, bool)
 	SendFailedBidEvent(string, currency.Amount)
 }
 

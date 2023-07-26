@@ -12,8 +12,8 @@ import (
 )
 
 type CreateInvestorRequest struct {
-	FullName string                `json:"fullName"`
-	Balance  InvestorAmountRequest `json:"balance"`
+	FullName string        `json:"fullName"`
+	Balance  AmountRequest `json:"balance"`
 }
 
 type UpdateInvestorRequest struct {
@@ -39,7 +39,7 @@ type InvestorResponse struct {
 	Bids     []BidInvestorResponse `json:"bids,omitempty"`
 }
 
-type InvestorAmountRequest struct {
+type AmountRequest struct {
 	Amount   string `json:"amount"`
 	Currency string `json:"currency"`
 }
@@ -53,7 +53,7 @@ type InvestorService interface {
 
 func (s *Server) investorRoutes(g *echo.Group) {
 	g.POST("", s.CreateInvestor)
-	g.GET("/:id", s.ListInvestors)
+	g.GET("", s.ListInvestors)
 }
 
 func (s *Server) CreateInvestor(c echo.Context) error {
