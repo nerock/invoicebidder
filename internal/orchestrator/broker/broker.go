@@ -3,9 +3,10 @@ package broker
 import (
 	"context"
 	"fmt"
-	"io"
 	"log"
 	"sync"
+
+	"github.com/nerock/invoicebidder/internal/investor"
 
 	"github.com/bojanz/currency"
 	"github.com/nerock/invoicebidder/internal/invoice"
@@ -13,12 +14,10 @@ import (
 
 type InvoiceService interface {
 	GetInvoice(context.Context, string) (invoice.Invoice, error)
-	CreateInvoice(context.Context, string, currency.Amount, io.Reader) (invoice.Invoice, error)
-	PlaceBid(context.Context, string, string, currency.Amount) (string, error)
 	ApproveTrade(context.Context, string, bool) error
 }
 type InvestorService interface {
-	CancelTrade(context.Context, map[string]currency.Amount) error
+	CancelTrade(context.Context, []investor.Bid) error
 	CancelBid(context.Context, string, currency.Amount) error
 }
 
@@ -139,9 +138,12 @@ func (b *Broker) approveTradeEvent(inv invoice.Invoice) error {
 }
 
 func (b *Broker) cancelTradeEvent(inv invoice.Invoice) error {
-	invBids := make(map[string]currency.Amount, len(inv.Bids))
+	invBids := make([]investor.Bid, len(inv.Bids))
 	for _, bid := range inv.Bids {
-		invBids[bid.InvestorID] = bid.Amount
+		invBids = append(invBids, investor.Bid{
+			InvestorID: bid.InvestorID,
+			Amount:     bid.Amount,
+		})
 	}
 
 	return b.investorService.CancelTrade(context.Background(), invBids)
