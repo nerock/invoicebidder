@@ -39,7 +39,7 @@ type IssuerService interface {
 }
 
 func (s *Server) issuerRoutes(g *echo.Group) {
-	g.POST("/", s.CreateIssuer)
+	g.POST("", s.CreateIssuer)
 	g.GET("/:id", s.RetrieveIssuer)
 }
 

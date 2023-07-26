@@ -31,7 +31,7 @@ type Server struct {
 func New(port int, invoiceService InvoiceService, investorService InvestorService, issuerService IssuerService, broker Broker) *Server {
 	e := echo.New()
 	e.Use(middleware.Logger())
-	e.Pre(middleware.AddTrailingSlash())
+	e.Pre(middleware.RemoveTrailingSlash())
 
 	return &Server{
 		e:               e,

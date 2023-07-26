@@ -56,7 +56,7 @@ type InvoiceService interface {
 }
 
 func (s *Server) invoiceRoutes(g *echo.Group) {
-	g.POST("/", s.CreateInvoice)
+	g.POST("", s.CreateInvoice)
 	g.GET("/:id", s.RetrieveInvoice)
 	g.POST("/:id/bid", s.Bid)
 	g.POST("/:id/trade", s.ApproveTrade)

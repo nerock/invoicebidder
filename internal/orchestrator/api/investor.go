@@ -52,7 +52,7 @@ type InvestorService interface {
 }
 
 func (s *Server) investorRoutes(g *echo.Group) {
-	g.POST("/", s.CreateInvestor)
+	g.POST("", s.CreateInvestor)
 	g.GET("/:id", s.ListInvestors)
 }
 
