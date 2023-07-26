@@ -21,10 +21,6 @@ type Config struct {
 	BasePath   string `json:"base_path"`
 }
 
-func (c Config) Validate() error {
-	return nil
-}
-
 func Read() (Config, error) {
 	cfgFile, err := os.Open("config.json")
 	if err != nil {
