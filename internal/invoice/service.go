@@ -65,26 +65,19 @@ func (s *Service) CreateInvoice(ctx context.Context, issuerID string, price curr
 	return invoice, nil
 }
 
-func (s *Service) PlaceBid(ctx context.Context, invoiceID string, investorID string, amount currency.Amount) (string, currency.Amount, error) {
+func (s *Service) PlaceBid(ctx context.Context, invoiceID string, investorID string, amount currency.Amount) (string, error) {
 	invoice, err := s.GetInvoice(ctx, invoiceID)
 	if err != nil {
-		return "", currency.Amount{}, err
+		return "", err
 	}
 
 	if invoice.Status != OPEN {
-		return "", currency.Amount{}, fmt.Errorf("can only place bids in open invoices")
-	}
-
-	remainingPrice := s.getRemainingPrice(invoice)
-	if cmp, err := remainingPrice.Cmp(amount); err != nil {
-		return "", currency.Amount{}, fmt.Errorf("could not compare prices: %w", err)
-	} else if cmp < 0 {
-		amount = remainingPrice
+		return "", fmt.Errorf("can only place bids in open invoices")
 	}
 
 	id, err := uuid.NewUUID()
 	if err != nil {
-		return "", currency.Amount{}, fmt.Errorf("could not generate id: %w", err)
+		return "", fmt.Errorf("could not generate id: %w", err)
 	}
 
 	if err := s.st.SaveBid(ctx, Bid{
@@ -94,16 +87,16 @@ func (s *Service) PlaceBid(ctx context.Context, invoiceID string, investorID str
 		Amount:     amount,
 		Active:     true,
 	}); err != nil {
-		return "", currency.Amount{}, err
+		return "", err
 	}
 
-	if remaining, _ := remainingPrice.Sub(amount); remaining.IsZero() {
+	if remaining, _ := s.getRemainingPrice(invoice).Sub(amount); remaining.IsZero() {
 		if err := s.st.UpdateStatus(ctx, invoiceID, LOCKED); err != nil {
-			return "", currency.Amount{}, err
+			return "", err
 		}
 	}
 
-	return id.String(), amount, nil
+	return id.String(), nil
 }
 
 func (s *Service) ApproveTrade(ctx context.Context, id string, approved bool) error {
