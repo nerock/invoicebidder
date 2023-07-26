@@ -58,7 +58,7 @@ func (s *Storage) RetrieveInvoicesByIssuerID(ctx context.Context, issID string) 
 
 		err := rows.Scan(&inv.ID, &inv.Price, &inv.Status)
 		if err != nil {
-			return nil, fmt.Errorf("could not scan bids: %w", err)
+			return nil, fmt.Errorf("could not scan invoice: %w", err)
 		}
 
 		inv.Bids, err = s.RetrieveActiveBidsByInvoiceID(ctx, inv.ID)
@@ -72,8 +72,31 @@ func (s *Storage) RetrieveInvoicesByIssuerID(ctx context.Context, issID string) 
 	return invoices, nil
 }
 
+func (s *Storage) RetrieveBidsByIDs(ctx context.Context, bidsIDs []string) ([]invoice.Bid, error) {
+	const query = `SELECT b.id, b.investor_id, b.amount FROM bids b WHERE b.id = any($1)`
+
+	rows, err := s.c.Query(ctx, query, bidsIDs)
+	if err != nil {
+		return nil, fmt.Errorf("could not retrieve bids: %w", err)
+	}
+
+	var bids []invoice.Bid
+	for rows.Next() {
+		var bid invoice.Bid
+
+		err := rows.Scan(&bid.ID, &bid.InvestorID, &bid.Amount)
+		if err != nil {
+			return nil, fmt.Errorf("could not scan bids: %w", err)
+		}
+
+		bids = append(bids, bid)
+	}
+
+	return bids, nil
+}
+
 func (s *Storage) UpdateStatus(ctx context.Context, id string, status invoice.Status) error {
-	const query = `UPDATE invoices SET status = $2 WHERE i.id = $1`
+	const query = `UPDATE invoices SET status = $2 WHERE id = $1`
 
 	if _, err := s.c.Exec(ctx, query, id, status); err != nil {
 		return fmt.Errorf("could not update invoice status in db: %w", err)

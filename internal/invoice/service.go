@@ -14,6 +14,7 @@ type Storage interface {
 	SaveInvoice(context.Context, Invoice) error
 	RetrieveInvoice(context.Context, string) (Invoice, error)
 	RetrieveInvoicesByIssuerID(context.Context, string) ([]Invoice, error)
+	RetrieveBidsByIDs(context.Context, []string) ([]Bid, error)
 	UpdateStatus(context.Context, string, Status) error
 
 	SaveBid(context.Context, Bid) error
@@ -43,6 +44,10 @@ func (s *Service) GetInvoice(ctx context.Context, id string) (Invoice, error) {
 
 func (s *Service) GetByIssuerID(ctx context.Context, issID string) ([]Invoice, error) {
 	return s.st.RetrieveInvoicesByIssuerID(ctx, issID)
+}
+
+func (s *Service) ListBidsByIDs(ctx context.Context, bidsIDs []string) ([]Bid, error) {
+	return s.st.RetrieveBidsByIDs(ctx, bidsIDs)
 }
 
 func (s *Service) CreateInvoice(ctx context.Context, issuerID string, price currency.Amount, file io.Reader) (Invoice, error) {
@@ -102,31 +107,36 @@ func (s *Service) PlaceBid(ctx context.Context, invoiceID string, investorID str
 	return id.String(), nil
 }
 
-func (s *Service) ApproveTrade(ctx context.Context, id string, approved bool) error {
+func (s *Service) ApproveTrade(ctx context.Context, id string, approved bool) ([]string, error) {
 	invoice, err := s.GetInvoice(ctx, id)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	if invoice.Status != LOCKED {
-		return fmt.Errorf("cannot close trade if the status is not locked")
+		return nil, fmt.Errorf("cannot close trade if the status is not locked")
 	}
 
 	if approved {
 		if err := s.st.UpdateStatus(ctx, id, TRADED); err != nil {
-			return err
+			return nil, err
 		}
 	} else {
 		if err := s.st.UpdateStatus(ctx, id, OPEN); err != nil {
-			return err
+			return nil, err
 		}
 
 		if err := s.st.DisableBidsByInvoiceID(ctx, id); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
-	return nil
+	bidsIDs := make([]string, 0, len(invoice.Bids))
+	for _, b := range invoice.Bids {
+		bidsIDs = append(bidsIDs, b.ID)
+	}
+
+	return bidsIDs, nil
 }
 
 func (s *Service) GetRemainingPrice(ctx context.Context, id string) (currency.Amount, error) {
