@@ -2,13 +2,14 @@ package api
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/jackc/pgx/v5"
 
 	"github.com/nerock/invoicebidder/internal/invoice"
 
@@ -108,7 +109,7 @@ func TestGetIssuer(t *testing.T) {
 						Convey("because the issuer does not exist", func() {
 							issSvc.getIssuerFunc = func(_ context.Context, id string) (issuer.Issuer, error) {
 								So(id, ShouldEqual, issID)
-								return issuer.Issuer{}, sql.ErrNoRows
+								return issuer.Issuer{}, pgx.ErrNoRows
 							}
 
 							Convey("return not found error code and an error", func() {
@@ -138,7 +139,7 @@ func TestGetIssuer(t *testing.T) {
 						iss := issuer.Issuer{
 							ID:       "id",
 							FullName: "manu",
-							Balances: []currency.Amount{amount},
+							Balance:  amount,
 						}
 						issSvc.getIssuerFunc = func(_ context.Context, id string) (issuer.Issuer, error) {
 							So(id, ShouldEqual, issID)
@@ -184,7 +185,7 @@ func TestGetIssuer(t *testing.T) {
 								js, err := json.Marshal(IssuerResponse{
 									ID:       iss.ID,
 									FullName: iss.FullName,
-									Balances: []string{currFmt.Format(amount)},
+									Balance:  currFmt.Format(amount),
 									Invoices: []IssuerInvoiceResponse{
 										{
 											ID:     inv.ID,

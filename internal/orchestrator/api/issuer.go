@@ -14,7 +14,7 @@ type CreateIssuerRequest struct {
 type IssuerResponse struct {
 	ID       string                  `json:"id"`
 	FullName string                  `json:"fullName"`
-	Balances []string                `json:"balances,omitempty"`
+	Balance  string                  `json:"balance,omitempty"`
 	Invoices []IssuerInvoiceResponse `json:"invoices,omitempty"`
 }
 
@@ -94,7 +94,7 @@ func (s *Server) RetrieveIssuer(c echo.Context) error {
 	return c.JSON(http.StatusOK, IssuerResponse{
 		ID:       iss.ID,
 		FullName: iss.FullName,
-		Balances: balances(iss.Balances),
+		Balance:  fmtBalance(iss.Balance),
 		Invoices: invoicesRes,
 	})
 }

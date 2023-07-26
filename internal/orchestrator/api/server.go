@@ -27,7 +27,7 @@ type InvoiceService interface {
 type InvestorService interface {
 	GetInvestor(context.Context, string) (investor.Investor, error)
 	ListInvestors(context.Context, []string) (map[string]investor.Investor, error)
-	CreateInvestor(context.Context, string, []currency.Amount) (investor.Investor, error)
+	CreateInvestor(context.Context, string, currency.Amount) (investor.Investor, error)
 	Bid(context.Context, string, currency.Amount, currency.Amount) error
 }
 
@@ -85,11 +85,10 @@ func (s *Server) Shutdown(ctx context.Context) error {
 	return s.e.Shutdown(ctx)
 }
 
-func balances(bs []currency.Amount) []string {
-	balances := make([]string, 0, len(bs))
-	for _, b := range bs {
-		balances = append(balances, currFmt.Format(b))
+func fmtBalance(balance currency.Amount) string {
+	if balance.IsZero() {
+		return ""
 	}
 
-	return balances
+	return currFmt.Format(balance)
 }

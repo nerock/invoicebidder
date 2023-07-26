@@ -10,8 +10,8 @@ import (
 )
 
 type CreateInvestorRequest struct {
-	FullName string   `json:"fullName"`
-	Balances []Amount `json:"balances"`
+	FullName string `json:"fullName"`
+	Balance  Amount `json:"balance"`
 }
 
 type UpdateInvestorRequest struct {
@@ -33,7 +33,7 @@ type BidInvoiceResponse struct {
 type InvestorResponse struct {
 	ID       string                `json:"id"`
 	FullName string                `json:"fullName"`
-	Balances []string              `json:"balances,omitempty"`
+	Balance  string                `json:"balance,omitempty"`
 	Bids     []BidInvestorResponse `json:"bids,omitempty"`
 }
 
@@ -53,18 +53,13 @@ func (s *Server) CreateInvestor(c echo.Context) error {
 		return errBadRequest(err, c)
 	}
 
-	bs := make([]currency.Amount, 0, len(req.Balances))
-	for _, balance := range req.Balances {
-		b, err := currency.NewAmount(balance.Amount, balance.Currency)
-		if err != nil {
-			return errBadRequest(fmt.Errorf("invalid bid amount: %w", err), c)
-		}
-
-		bs = append(bs, b)
+	balance, err := currency.NewAmount(req.Balance.Amount, req.Balance.Currency)
+	if err != nil {
+		return errBadRequest(fmt.Errorf("invalid balance: %w", err), c)
 	}
 
 	ctx := c.Request().Context()
-	inv, err := s.investorService.CreateInvestor(ctx, req.FullName, bs)
+	inv, err := s.investorService.CreateInvestor(ctx, req.FullName, balance)
 	if err != nil {
 		return errHandler(err, c)
 	}
@@ -72,7 +67,7 @@ func (s *Server) CreateInvestor(c echo.Context) error {
 	return c.JSON(http.StatusCreated, InvestorResponse{
 		ID:       inv.ID,
 		FullName: inv.FullName,
-		Balances: balances(bs),
+		Balance:  fmtBalance(balance),
 	})
 }
 
@@ -94,7 +89,7 @@ func (s *Server) ListInvestors(c echo.Context) error {
 		res = append(res, InvestorResponse{
 			ID:       inv.ID,
 			FullName: inv.FullName,
-			Balances: balances(inv.Balances),
+			Balance:  fmtBalance(inv.Balance),
 		})
 	}
 
