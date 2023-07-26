@@ -12,7 +12,7 @@ import (
 type Storage interface {
 	CreateIssuer(context.Context, Issuer) error
 	RetrieveIssuer(context.Context, string) (Issuer, error)
-	UpdateBalances(context.Context, string, []currency.Amount) error
+	UpdateBalance(context.Context, string, currency.Amount) error
 }
 
 func NewService(st Storage) *Service {
@@ -31,9 +31,11 @@ func (s *Service) CreateIssuer(ctx context.Context, name string) (Issuer, error)
 		return Issuer{}, fmt.Errorf("could not generate id: %w", err)
 	}
 
+	b, _ := currency.NewAmountFromInt64(0, "EUR")
 	issuer := Issuer{
 		ID:       id.String(),
 		FullName: name,
+		Balance:  b,
 	}
 	if err := s.st.CreateIssuer(ctx, issuer); err != nil {
 		return Issuer{}, nil
@@ -52,22 +54,15 @@ func (s *Service) ApproveTrade(ctx context.Context, id string, amount currency.A
 		return err
 	}
 
-	var ok bool
-	for i, b := range issuer.Balances {
-		if b.CurrencyCode() == amount.CurrencyCode() {
-			ok = true
-			newBalance, err := b.Add(amount)
-			if err != nil {
-				return fmt.Errorf("could not add funds to issuer balance: %w", err)
-			}
-
-			issuer.Balances[i] = newBalance
-		}
+	if issuer.Balance.IsZero() {
+		return s.st.UpdateBalance(ctx, id, amount)
 	}
 
-	if !ok {
-		issuer.Balances = append(issuer.Balances, amount)
+	convertedAmount, err := amount.Convert(issuer.Balance.CurrencyCode(), "1")
+	if err != nil {
+		return fmt.Errorf("could not convert amount: %w", err)
 	}
 
-	return s.st.UpdateBalances(ctx, id, issuer.Balances)
+	total, _ := convertedAmount.Add(issuer.Balance)
+	return s.st.UpdateBalance(ctx, id, total)
 }
