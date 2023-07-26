@@ -72,7 +72,7 @@ func (s *Storage) RetrieveInvoicesByIssuerID(ctx context.Context, issID string) 
 	return invoices, nil
 }
 
-func (s *Storage) UpdateStatus(ctx context.Context, id string, status string) error {
+func (s *Storage) UpdateStatus(ctx context.Context, id string, status invoice.Status) error {
 	const query = `UPDATE invoices SET status = $2 WHERE i.id = $1`
 
 	if _, err := s.c.Exec(ctx, query, id, status); err != nil {
